@@ -49,6 +49,10 @@ namespace RevitVoxelzation
         }
         public Vec3 origin { get; private set; } = Vec3.Zero;
         public double VoxSize { get; private set; }
+        /// <summary>
+        /// Minimum gap height
+        /// </summary>
+        public double MinGapHeight { get; private set; }
         public ExternalEvent ShowPath { get; internal set; }
 
         private Stopwatch sw = new Stopwatch();
@@ -168,7 +172,7 @@ namespace RevitVoxelzation
                     foreach (var c in meshSaver.ReadMeshElementFromTempFile())
                     {
                         swTemp=Stopwatch.StartNew();
-                        var ve = new VoxelElement(this.VoxDoc, c,mergeVoxels);
+                        var ve = new VoxelElement(this.VoxDoc, c,mergeVoxels,this.MinGapHeight);
                         swTemp.Stop();
                         var trisNumInMe= c.GetTriangleNumber();
                         NumTriangle += trisNumInMe;
@@ -246,7 +250,8 @@ namespace RevitVoxelzation
         private void BackgroundWorker_DoWork_TestMode(object sender, DoWorkEventArgs e)
         {
             this.sw.Restart();
-            mergeVoxels = !(this.chkDebug.Checked);
+            //mergeVoxels = !(this.chkDebug.Checked);
+            mergeVoxels = true;
             try
             {
                 TempFileSaver meshSaver = e.Argument as TempFileSaver;
@@ -258,7 +263,7 @@ namespace RevitVoxelzation
                 this.VoxDoc.Elements = new List<VoxelElement>();
                 foreach (var c in meshSaver.ReadMeshElementFromTempFile())
                 {
-                    var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels);
+                    var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels,this.MinGapHeight);
                     this.VoxDoc.Elements.Add(ve);
                     //voxElemSaver.WriteVoxelElement(ve);
                     BackgroundWorker.ReportProgress(0, c);
@@ -277,6 +282,7 @@ namespace RevitVoxelzation
             this.ShowTriangles = chkShowTriangle.Checked;
             this.origin = Vec3.Zero;
             this.VoxSize = double.Parse(txtVoxSize.Text) / 304.8;
+            this.MinGapHeight = double.Parse(txtMinGapHeight.Text)/304.8;
             btnSave.Enabled = false;
             this.VoxDoc = new VoxelDocument();
             this.VoxDoc.Elements = new List<VoxelElement>();
@@ -856,7 +862,7 @@ namespace RevitVoxelzation
                         elemId_ME.Add(c.ElementId, c);
                         elem2Visulaize.Add(c);
                         NumTriangle += c.GetTriangleNumber();
-                        var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels);
+                        var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels, this.MinGapHeight);
                         NumVoxels += ve.Voxels.Count;
                         voxElemSaver.WriteVoxelElement(ve);
                         bw.ReportProgress(0, c);
@@ -869,7 +875,7 @@ namespace RevitVoxelzation
                         MeshElement c = ToMeshElement(elem, opt);
                         elemId_ME.Add(c.ElementId, c);
                         swTemp.Restart();
-                        var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels);
+                        var ve = new VoxelElement(this.VoxDoc, c, mergeVoxels, this.MinGapHeight);
                         sw.Stop();
                         var trisNumInMe= c.GetTriangleNumber();
                         NumTriangle += trisNumInMe;
@@ -1036,6 +1042,7 @@ namespace RevitVoxelzation
                     btnSave.Enabled = false;
                     this.VoxDoc = new VoxelDocument();
                     this.VoxDoc.Elements = new List<VoxelElement>();
+                    this.MinGapHeight = double.Parse(txtMinGapHeight.Text)/304.8;
                     VoxDoc.Origin = this.origin;
                     VoxDoc.VoxelSize = this.VoxSize;
                     BackgroundWorker = new BackgroundWorker();

@@ -503,7 +503,7 @@ namespace RevitVoxelzation
 
         }
 
-        public IEnumerable<Voxel> GenerateVoxels(bool fillAfterMerge)
+        public IEnumerable<Voxel> GenerateVoxels(bool fillAfterMerge,double minGapHeight)
         {
             //get voxel range
             GetSolidVoxelRange(out int colMin, out int rowMin, out int colMax, out int rowMax);
@@ -524,9 +524,9 @@ namespace RevitVoxelzation
             //merge voxels
             if(fillAfterMerge)
             {
-                MergeIntersectedVoxels(ref voxInSld);
+                MergeIntersectedVoxels(ref voxInSld,minGapHeight);
                 //Get adjacen relationship of voxels
-                FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels);
+                FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels,minGapHeight);
                 //fill voxels
                 FillVoxels(ref voxInSld, boundaryVoxels, fillAfterMerge);
             }
@@ -543,7 +543,7 @@ namespace RevitVoxelzation
             }
         }
 
-        public IEnumerable<Voxel> GenerateVoxels(bool mergeIntersecting,  bool fillAfterMerge)
+        public IEnumerable<Voxel> GenerateVoxels(bool mergeIntersecting,  bool fillAfterMerge,double minGapHeight)
         {
             //get voxel range
             GetSolidVoxelRange(out int colMin, out int rowMin, out int colMax, out int rowMax);
@@ -565,11 +565,11 @@ namespace RevitVoxelzation
             //merge voxels
             if (mergeIntersecting)
             {
-                MergeIntersectedVoxels(ref voxInSld);
+                MergeIntersectedVoxels(ref voxInSld, minGapHeight);
                 if (fillAfterMerge)
                 {
                     //Get adjacen relationship of voxels
-                    FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels);
+                    FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels, minGapHeight);
                     //fill voxels
                     FillVoxels(ref voxInSld, boundaryVoxels, fillAfterMerge);
                 }
@@ -607,7 +607,7 @@ namespace RevitVoxelzation
             voxInSld = new List<Voxel>[colRng, rowRng];
             return numPts;
         }
-        public IEnumerable<Voxel> GenerateVoxels_Parallel(bool fillAfterMerge)
+        public IEnumerable<Voxel> GenerateVoxels_Parallel(bool fillAfterMerge,double minGapHeight)
         {
             foreach (var tri in this.Triangles)
             {
@@ -621,9 +621,9 @@ namespace RevitVoxelzation
                 }
             }
             //merge voxels
-            MergeIntersectedVoxels(ref voxInSld);
+            MergeIntersectedVoxels(ref voxInSld, minGapHeight);
             //Get adjacen relationship of voxels
-            FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels);
+            FindAdjacentVoxels(ref voxInSld, out List<Voxel> boundaryVoxels,minGapHeight);
             //fill voxels
             FillVoxels(ref voxInSld, boundaryVoxels, fillAfterMerge);
             //remove redundancy link info
@@ -641,7 +641,7 @@ namespace RevitVoxelzation
 
 
 
-        private void MergeIntersectedVoxels(ref List<Voxel>[,] voxel2Merge)
+        private void MergeIntersectedVoxels(ref List<Voxel>[,] voxel2Merge,double minGapWidth)
         {
             var colRng = voxel2Merge.GetUpperBound(0) + 1;
             var rowRng = voxel2Merge.GetUpperBound(1) + 1;
@@ -658,19 +658,20 @@ namespace RevitVoxelzation
                         List<Voxel> voxOdd = voxelOriginal.Where(c => c.VoxType ==VoxelType.Odd).ToList();
                         if(voxOdd .Count ==voxelOriginal.Count ) //only odd voxel exist
                         {
-                            mergedVoxel = MergeVoxelColumn(voxOdd, true);
+                            mergedVoxel = MergeVoxelColumn(voxOdd, true,minGapWidth);
                         }
                         else // odd and merged voxels all exist
                         {
-                            mergedVoxel= MergeVoxelColumn(voxelOriginal, true);
+                            mergedVoxel= MergeVoxelColumn(voxelOriginal, true,minGapWidth);
                         }
                         voxel2Merge[colLoc, rowLoc] = mergedVoxel;
                     }
                 }
             }
         }
-        private List<Voxel> MergeVoxelColumn(List<Voxel> voxelOriginal,bool needSort)
+        private List<Voxel> MergeVoxelColumn(List<Voxel> voxelOriginal,bool needSort,double minGapHeight)
         {
+            var faceOffset = minGapHeight / 2;
             if(voxelOriginal.Count ==0)
                 return voxelOriginal;
             List<Voxel> mergedVoxels = new List<Voxel>() { Capacity =voxelOriginal.Count};
@@ -687,8 +688,8 @@ namespace RevitVoxelzation
             {
                 Voxel foodVoxel = voxes2Merge[foodPointer];
                 //check if snake voxels intersects food voxels
-                if (Math.Round(snakeVoxel.BottomElevation - foodVoxel.TopElevation, 4) <= 0 &&
-                    Math.Round(snakeVoxel.TopElevation - foodVoxel.BottomElevation, 4) >= 0)
+                if (Math.Round(snakeVoxel.BottomElevation - foodVoxel.TopElevation-minGapHeight, 4) <= 0 &&
+                    Math.Round(snakeVoxel.TopElevation - foodVoxel.BottomElevation+minGapHeight, 4) >= 0)
                 {
                     snakeVoxel.TopElevation = Math.Max(snakeVoxel.TopElevation, foodVoxel.TopElevation);
                     //if the snaek voxel is odd and the food is common, modify the type of the voxel as common
@@ -817,7 +818,7 @@ namespace RevitVoxelzation
             }
             return result.OrderBy(c => c.BottomElevation).ToList() ;
         }
-        private void FindAdjacentVoxels(ref List<Voxel>[,] mergedVoxels,out List<Voxel> BoundaryVoxels)
+        private void FindAdjacentVoxels(ref List<Voxel>[,] mergedVoxels,out List<Voxel> BoundaryVoxels,double minGapHeigh)
         {
             var colRng = mergedVoxels.GetUpperBound(0) + 1;
             var rowRng = mergedVoxels.GetUpperBound(1) + 1;
@@ -835,8 +836,8 @@ namespace RevitVoxelzation
                             vox.BottomActivater = -1;
                             vox.TopActivater = -1;
                             vox.BoundaryActivater = -1;
-                            var voxGapRangeLower = vox.GetLowerGapRange();
-                            var voxGapRangeUpper = vox.GetUpperGapRange();
+                            var voxGapRangeLower = vox.GetLowerGapRange(minGapHeigh);
+                            var voxGapRangeUpper = vox.GetUpperGapRange(minGapHeigh);
                             //get offset
                             Tuple<int, int>[] offsets = new Tuple<int, int>[4] { new Tuple<int, int>(1, 0), new Tuple<int, int>(0, 1) , new Tuple<int, int>(-1, 0), new Tuple<int, int>(0, -1) };
                             for(int adjSeq=0;adjSeq<4;adjSeq++)
@@ -857,8 +858,8 @@ namespace RevitVoxelzation
                                         foreach (var voxAdj in voxesAdj)
                                         {
                                             var voxAdjBtm = voxAdj.BottomElevation;
-                                            if(Math.Round (voxAdjBtm-vox.TopElevation,4)<=0 
-                                                &&  Math.Round(vox.BottomElevation-voxAdj.TopElevation,4)<=0)// the 2 voxels intersects
+                                            if(Math.Round (voxAdjBtm-vox.TopElevation-minGapHeigh,4)<=0 
+                                                &&  Math.Round(vox.BottomElevation-voxAdj.TopElevation-minGapHeigh,4)<=0)// the 2 voxels intersects
                                             {
                                                 voxelsSideNearby.Add(voxAdj);
                                             }
@@ -879,8 +880,8 @@ namespace RevitVoxelzation
                                             //get the top-bottom linking relationship
                                             foreach (var voxNearBy in voxelsSideNearby)
                                             {
-                                                var nearBtmAccessibleRng = voxNearBy.GetLowerGapRange();
-                                                var nearTopAccessibleRng = voxNearBy.GetUpperGapRange();
+                                                var nearBtmAccessibleRng = voxNearBy.GetLowerGapRange(minGapHeigh);
+                                                var nearTopAccessibleRng = voxNearBy.GetUpperGapRange(minGapHeigh);
                                                 if (nearBtmAccessibleRng.Intersect(voxGapRangeLower)) //the adj voxels can be visited
                                                 {
                                                     if (voxNearBy.BottomElevation < minBtm)
@@ -3289,7 +3290,7 @@ namespace RevitVoxelzation
         public bool IsActive { get; set; } = true;
        
         public VoxelElement() { }
-        public VoxelElement(VoxelDocument doc, MeshElement meshElement,bool fillVoxels)
+        public VoxelElement(VoxelDocument doc, MeshElement meshElement,bool fillVoxels,double minGapHeight)
         {
             List<Voxel> vox = new List<Voxel>();
             var solids = meshElement.Solids;
@@ -3305,7 +3306,7 @@ namespace RevitVoxelzation
             vox.Capacity = gpNumberAll / 3;
             foreach (var sld in solids)
             {
-                vox.AddRange(sld.GenerateVoxels(fillVoxels));
+                vox.AddRange(sld.GenerateVoxels(fillVoxels,minGapHeight));
             }
             vox.TrimExcess();
             this.IsActive = meshElement.IsActive;
@@ -3317,34 +3318,7 @@ namespace RevitVoxelzation
             this.Name = meshElement.Name;
             this.IsTransportElement = meshElement.isTransport;
         }
-        public VoxelElement(VoxelDocument doc, MeshElement meshElement,bool MergeIntersecting, bool fillVoxels)
-        {
-            List<Voxel> vox = new List<Voxel>();
-            var solids = meshElement.Solids;
-            var origin = doc.Origin;
-            var voxSize = doc.VoxelSize;
-            //calcualte gridPointnumber
-            int gpNumberAll = 0;
-            foreach (var sld in solids)
-            {
-                sld.SetAllGridPoints(origin, voxSize, out int gpNumber);
-                gpNumberAll += gpNumber;
-            }
-            vox.Capacity = gpNumberAll / 3;
-            foreach (var sld in solids)
-            {
-                vox.AddRange(sld.GenerateVoxels(MergeIntersecting, fillVoxels));
-            }
-            vox.TrimExcess();
-            this.IsActive = meshElement.IsActive;
-            this.IsSupportElement = meshElement.IsSupportElem;
-            this.IsTransportElement = meshElement.isTransport;
-            this.Voxels = vox;
-            this.ElementId = meshElement.ElementId;
-            this.Category = meshElement.Category;
-            this.Name = meshElement.Name;
-            this.IsTransportElement = meshElement.isTransport;
-        }
+       
 
         
         /// <summary>
@@ -3374,11 +3348,11 @@ namespace RevitVoxelzation
             this.IsTransportElement = meshElement.isTransport;
         }
 
-        public void Voxelize(MeshElement meshElement,double voxSize,bool fillVoxels)
+        public void Voxelize(MeshElement meshElement,double voxSize,bool fillVoxels,double minGapHeight)
         {
             foreach (var sld in meshElement.Solids)
             {
-                this.Voxels.AddRange(sld.GenerateVoxels_Parallel(fillVoxels));
+                this.Voxels.AddRange(sld.GenerateVoxels_Parallel(fillVoxels, minGapHeight));
             }
             
         }
@@ -3547,10 +3521,13 @@ namespace RevitVoxelzation
         public bool BottomOutside { get; set; } = false;
         public bool TopOutside { get; set; } = false;
         public AccessibleRegion OwnerRegion { get; internal set; }
-
+        /// <summary>
+        /// Get Lower Gap range
+        /// </summary>
+        /// <returns>Voxel Gap</returns>
         public VoxelRange GetLowerGapRange()
         {
-            //obtain vox Button Gap
+            //obtain vox Bottom Gap
             double dblBottomGapSt = double.MinValue;
             double dblBottomGapEd = this.BottomElevation;
             if(BottomVoxel!=null)
@@ -3560,6 +3537,26 @@ namespace RevitVoxelzation
             return new VoxelRange(dblBottomGapSt, dblBottomGapEd);
             
         }
+        /// <summary>
+        /// Get lower gap consider minimum passing height
+        /// </summary>
+        /// <returns></returns>
+        public VoxelRange GetLowerGapRange(double minPassingHeight)
+        {
+            //obtain vox Bottom Gap
+            double dblBottomGapSt = double.MinValue;
+            double dblBottomGapEd = this.BottomElevation-minPassingHeight/2;
+            if (BottomVoxel != null)
+            {
+                dblBottomGapSt = BottomVoxel.TopElevation;
+            }
+            return new VoxelRange(dblBottomGapSt, dblBottomGapEd);
+
+        }
+        /// <summary>
+        /// Get the upper gap above the voxel
+        /// </summary>
+        /// <returns></returns>
         public VoxelRange GetUpperGapRange()
         {
             //obtan vox TopGap
@@ -3571,8 +3568,24 @@ namespace RevitVoxelzation
             }
             return new VoxelRange(dblTopGapSt, dblTopGapEd);
         }
+
+        /// <summary>
+        /// Get the upper gap above a voxel considering the min passing height
+        /// </summary>
+        /// <returns></returns>
+        public VoxelRange GetUpperGapRange(double minPassingHeight)
+        {
+            //obtan vox TopGap
+            double dblTopGapSt = TopElevation+minPassingHeight/2;
+            double dblTopGapEd = double.MaxValue;
+            if (TopVoxel != null)
+            {
+                dblTopGapEd = TopVoxel.BottomElevation;
+            }
+            return new VoxelRange(dblTopGapSt, dblTopGapEd);
+        }
         //Used for comparing F
-        
+
         public IEnumerable<Voxel> GenerateSmallerVoxel(Vec3 origin, double voxelHeight)
         {
             var voxBtm = this.BottomElevation;
@@ -3696,7 +3709,9 @@ namespace RevitVoxelzation
 
     }
     
-    
+    /// <summary>
+    /// Voxel Range representing the void space between 2 verticl adjacent voxels
+    /// </summary>
     public class VoxelRange
     {
         public double StartElevation { get; set; }

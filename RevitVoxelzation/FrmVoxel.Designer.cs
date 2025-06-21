@@ -53,10 +53,15 @@
             this.btnVoxGenValidation = new System.Windows.Forms.Button();
             this.btnExport = new System.Windows.Forms.Button();
             this.dgvResult = new System.Windows.Forms.DataGridView();
+            this.groupBox1 = new System.Windows.Forms.GroupBox();
+            this.label5 = new System.Windows.Forms.Label();
+            this.txtMinGapHeight = new System.Windows.Forms.TextBox();
+            this.label4 = new System.Windows.Forms.Label();
             this.groupBox3.SuspendLayout();
             this.groupBox4.SuspendLayout();
             this.groupBox5.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvResult)).BeginInit();
+            this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
             // txtVoxSize
@@ -97,7 +102,7 @@
             // 
             // prog
             // 
-            this.prog.Location = new System.Drawing.Point(6, 828);
+            this.prog.Location = new System.Drawing.Point(8, 851);
             this.prog.Name = "prog";
             this.prog.Size = new System.Drawing.Size(733, 42);
             this.prog.TabIndex = 3;
@@ -146,9 +151,9 @@
             this.groupBox3.Controls.Add(this.btnGenerateByMesh);
             this.groupBox3.Controls.Add(this.btnGenerate);
             this.groupBox3.Controls.Add(this.btnVisualize);
-            this.groupBox3.Location = new System.Drawing.Point(21, 21);
+            this.groupBox3.Location = new System.Drawing.Point(17, 83);
             this.groupBox3.Name = "groupBox3";
-            this.groupBox3.Size = new System.Drawing.Size(718, 161);
+            this.groupBox3.Size = new System.Drawing.Size(724, 158);
             this.groupBox3.TabIndex = 9;
             this.groupBox3.TabStop = false;
             this.groupBox3.Text = "Voxelize element";
@@ -260,9 +265,9 @@
             this.groupBox4.Controls.Add(this.btnConvert);
             this.groupBox4.Controls.Add(this.label3);
             this.groupBox4.Controls.Add(this.txtSmallVoxH);
-            this.groupBox4.Location = new System.Drawing.Point(21, 188);
+            this.groupBox4.Location = new System.Drawing.Point(8, 247);
             this.groupBox4.Name = "groupBox4";
-            this.groupBox4.Size = new System.Drawing.Size(718, 598);
+            this.groupBox4.Size = new System.Drawing.Size(735, 598);
             this.groupBox4.TabIndex = 14;
             this.groupBox4.TabStop = false;
             this.groupBox4.Text = "Validation";
@@ -317,17 +322,56 @@
             this.dgvResult.Name = "dgvResult";
             this.dgvResult.RowHeadersWidth = 62;
             this.dgvResult.RowTemplate.Height = 30;
-            this.dgvResult.Size = new System.Drawing.Size(695, 393);
+            this.dgvResult.Size = new System.Drawing.Size(720, 393);
             this.dgvResult.TabIndex = 7;
             this.dgvResult.CellContentClick += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvResult_CellContentClick);
             this.dgvResult.RowEnter += new System.Windows.Forms.DataGridViewCellEventHandler(this.dgvResult_RowEnter);
             this.dgvResult.RowHeaderMouseClick += new System.Windows.Forms.DataGridViewCellMouseEventHandler(this.dgvResult_RowHeaderMouseClick);
             // 
+            // groupBox1
+            // 
+            this.groupBox1.Controls.Add(this.label5);
+            this.groupBox1.Controls.Add(this.txtMinGapHeight);
+            this.groupBox1.Controls.Add(this.label4);
+            this.groupBox1.Location = new System.Drawing.Point(11, 3);
+            this.groupBox1.Name = "groupBox1";
+            this.groupBox1.Size = new System.Drawing.Size(729, 69);
+            this.groupBox1.TabIndex = 15;
+            this.groupBox1.TabStop = false;
+            this.groupBox1.Text = "Model Setting";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(224, 30);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(26, 18);
+            this.label5.TabIndex = 2;
+            this.label5.Text = "mm";
+            // 
+            // txtMinGapHeight
+            // 
+            this.txtMinGapHeight.Location = new System.Drawing.Point(101, 27);
+            this.txtMinGapHeight.Name = "txtMinGapHeight";
+            this.txtMinGapHeight.Size = new System.Drawing.Size(116, 28);
+            this.txtMinGapHeight.TabIndex = 1;
+            this.txtMinGapHeight.Text = "0";
+            // 
+            // label4
+            // 
+            this.label4.AutoSize = true;
+            this.label4.Location = new System.Drawing.Point(24, 29);
+            this.label4.Name = "label4";
+            this.label4.Size = new System.Drawing.Size(71, 18);
+            this.label4.TabIndex = 0;
+            this.label4.Text = "Min Gap";
+            // 
             // FrmVoxel
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(9F, 18F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(749, 882);
+            this.ClientSize = new System.Drawing.Size(753, 905);
+            this.Controls.Add(this.groupBox1);
             this.Controls.Add(this.groupBox4);
             this.Controls.Add(this.groupBox3);
             this.Controls.Add(this.prog);
@@ -342,6 +386,8 @@
             this.groupBox5.ResumeLayout(false);
             this.groupBox5.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.dgvResult)).EndInit();
+            this.groupBox1.ResumeLayout(false);
+            this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
 
         }
@@ -372,5 +418,9 @@
         private System.Windows.Forms.Button btnCompressVoxes;
         private System.Windows.Forms.Button btnSaveCSV;
         private System.Windows.Forms.CheckBox chkConvertSldByElems;
+        private System.Windows.Forms.GroupBox groupBox1;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox txtMinGapHeight;
+        private System.Windows.Forms.Label label4;
     }
 }
